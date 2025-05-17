@@ -14,6 +14,7 @@ import {
   BadRequestException,
   Query,
   ParseIntPipe,
+  Headers,
 } from '@nestjs/common';
 import { CarService } from './car.service';
 
@@ -34,7 +35,13 @@ export class CarController {
   constructor(private readonly carService: CarService) {}
 
   @Get()
-  async getFilteredCars(@Query() filter: CarFilterDto) {
+  async getFilteredCars(
+    @Query() filter: CarFilterDto,
+    @Headers('x-admin') xAdmin: string,
+  ) {
+    if (!xAdmin) {
+      filter.status = 'in_stock';
+    }
     return this.carService.getFilteredCars(filter);
   }
 

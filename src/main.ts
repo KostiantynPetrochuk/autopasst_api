@@ -16,6 +16,6 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(3001);
+  await app.listen(8080);
 }
 bootstrap();

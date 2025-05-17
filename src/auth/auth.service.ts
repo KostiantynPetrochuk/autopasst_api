@@ -45,8 +45,9 @@ export class AuthService {
       );
     }
     const payload = { id: createdProfile.id, login: createdProfile.login };
+    const { salt: _, hashPwd: __, ...safeProfile } = createdProfile;
     return {
-      user: createdProfile,
+      user: safeProfile,
       tokens: {
         accessToken: await this.jwtService.signAsync(payload, {
           expiresIn: '15m',
@@ -72,8 +73,9 @@ export class AuthService {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
     const payload = { id: profile.id, login: profile.login };
+    const { salt: _, hashPwd: __, ...safeProfile } = profile;
     return {
-      user: profile,
+      user: safeProfile,
       tokens: {
         accessToken: await this.jwtService.signAsync(payload, {
           expiresIn: '15m',

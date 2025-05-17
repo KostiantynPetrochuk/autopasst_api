@@ -31,11 +31,11 @@ export class AuthController {
     return this.authService.signIn(signInDto.login, signInDto.pwd);
   }
 
-  @HttpCode(HttpStatus.OK)
-  @Post('signup')
-  signUp(@Body() signUpDto: SignUpDto) {
-    return this.authService.signUp(signUpDto.login, signUpDto.pwd);
-  }
+  // @HttpCode(HttpStatus.OK)
+  // @Post('signup')
+  // signUp(@Body() signUpDto: SignUpDto) {
+  //   return this.authService.signUp(signUpDto.login, signUpDto.pwd);
+  // }
 
   @UseGuards(RefreshJwtGuard)
   @Post('refresh')

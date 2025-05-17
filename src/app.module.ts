@@ -67,7 +67,6 @@ import { SellCarRequestModule } from './sell-car-request/sell-car-request.module
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    CarSelectionService,
   ],
 })
 export class AppModule implements NestModule {

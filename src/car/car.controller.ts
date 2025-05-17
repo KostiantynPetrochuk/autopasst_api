@@ -1,3 +1,6 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Controller,
   Post,
@@ -10,6 +13,7 @@ import {
   UploadedFiles,
   BadRequestException,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CarService } from './car.service';
 
@@ -45,16 +49,27 @@ export class CarController {
       ],
       {
         storage: diskStorage({
-          destination: './uploads/cars',
+          destination: (req, file, cb) => {
+            if (!req.body.folderName) {
+              req.body.folderName = uuidv4();
+            }
+            const uploadPath = path.join('./uploads/cars', req.body.folderName);
+            if (!fs.existsSync(uploadPath)) {
+              fs.mkdirSync(uploadPath, { recursive: true });
+            }
+            cb(null, uploadPath);
+          },
           filename: (req, file, cb) => {
-            const fileName = `${Date.now()}${extname(file.originalname)}`;
+            const uniqueSuffix = uuidv4();
+            const ext = extname(file.originalname);
+            const fileName = `${uniqueSuffix}${ext}`;
             cb(null, fileName);
           },
         }),
       },
     ),
   )
-  async uploadFile(
+  async saveCar(
     @Body() body: any,
     @UploadedFiles()
     files: {
@@ -62,8 +77,13 @@ export class CarController {
       specification?: Express.Multer.File[];
     },
   ) {
-    const imageNames = files.files?.map((file) => file.filename) || [];
-    const specFilename = files.specification?.[0]?.filename || '';
+    const folderName = body.folderName;
+    const imageNames = (files.files || []).map(
+      (file) => `${folderName}/${file.filename}`,
+    );
+    const specFilename = files.specification?.[0]
+      ? `${folderName}/${files.specification[0].filename}`
+      : '';
     const createCarDto = plainToInstance(CreateCarDto, {
       ...body,
       imageNames,
@@ -78,12 +98,26 @@ export class CarController {
     return this.carService.createCar(createCarDto);
   }
 
+  @Get('featured')
+  async getFeaturedCars() {
+    return await this.carService.getFeaturedCars();
+  }
+
   @Get(':id')
   async getCar(@Param('id') id: number): Promise<Car> {
-    const car = await this.carService.getCarById(id);
+    const car = await this.carService.getCarWithDetailsById(id);
     if (!car) {
       throw new NotFoundException(`Car with id ${id} not found`);
     }
     return car;
+  }
+
+  @Get('brand/:id')
+  async getCarsByBrand(@Param('id', ParseIntPipe) brandId: number) {
+    const cars = await this.carService.getCarsByBrand(brandId);
+    if (!cars || cars.length === 0) {
+      throw new NotFoundException('Cars not found.');
+    }
+    return { cars };
   }
 }

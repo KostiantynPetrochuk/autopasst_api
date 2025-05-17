@@ -39,11 +39,15 @@ export class CarService {
     return await this.carRepository.save(car);
   }
 
-  async getCarById(id: number): Promise<Car> {
-    const car = await this.carRepository.findOne({
-      where: { id },
-      relations: ['brand', 'model', 'carFeatures', 'carFeatures.feature'],
-    });
+  async getCarWithDetailsById(id: number): Promise<Car> {
+    const car = await this.carRepository
+      .createQueryBuilder('car')
+      .innerJoin('car.brand', 'brand')
+      .innerJoin('car.model', 'model')
+      .addSelect(['brand.brandName', 'model.modelName'])
+      .where('car.id = :id', { id })
+      .getOne();
+
     if (!car) {
       throw new NotFoundException(`Car with id ${id} not found`);
     }
@@ -130,5 +134,38 @@ export class CarService {
 
     const [data, total] = await qb.getManyAndCount();
     return { data, total };
+  }
+
+  async getFeaturedCars(): Promise<{ intact: Car[]; damaged: Car[] }> {
+    const baseQuery = this.carRepository
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.brand', 'brand')
+      .leftJoinAndSelect('car.model', 'model')
+      .where('car.status = :status', { status: 'in_stock' })
+      .orderBy('car.createdAt', 'DESC')
+      .limit(5);
+
+    const intactCars = await baseQuery
+      .clone()
+      .andWhere('car.condition = :condition', { condition: 'intact' })
+      .getMany();
+
+    const damagedCars = await baseQuery
+      .clone()
+      .andWhere('car.condition = :condition', { condition: 'damaged' })
+      .getMany();
+    return { intact: intactCars, damaged: damagedCars };
+  }
+
+  async getCarsByBrand(brandId: number): Promise<Car[]> {
+    return await this.carRepository
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.brand', 'brand')
+      .leftJoinAndSelect('car.model', 'model')
+      .where('car.brandId = :brandId', { brandId })
+      .andWhere('car.status = :status', { status: 'in_stock' })
+      .orderBy('car.createdAt', 'DESC')
+      .limit(10)
+      .getMany();
   }
 }

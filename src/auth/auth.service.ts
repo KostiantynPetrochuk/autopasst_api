@@ -44,7 +44,7 @@ export class AuthService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const payload = { sub: createdProfile.id, login: createdProfile.login };
+    const payload = { id: createdProfile.id, login: createdProfile.login };
     return {
       user: createdProfile,
       tokens: {
@@ -71,7 +71,7 @@ export class AuthService {
     if (!isEqual) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
-    const payload = { sub: profile.id, login: profile.login };
+    const payload = { id: profile.id, login: profile.login };
     return {
       user: profile,
       tokens: {
@@ -90,8 +90,8 @@ export class AuthService {
 
   async refreshToken(user: any) {
     const payload = {
-      username: user.username,
-      sub: user.sub,
+      login: user.login,
+      id: user.id,
     };
 
     return {
